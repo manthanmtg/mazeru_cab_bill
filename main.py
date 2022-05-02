@@ -21,6 +21,10 @@ def get_ola_details(text, file_name):
     start_time, end_time = _time[0], _time[1]
     start_time = start_time[0] + ":" + start_time[1] + " " + start_time[2]
     end_time = end_time[0] + ":" + end_time[1] + " " + end_time[2]
+    start_time_formatted = parser.parse(start_time)
+    end_time_formatted = parser.parse(end_time)
+    # Calculate trip time
+    trip_timediff = str(end_time_formatted - start_time_formatted)
 
     # Extract amount details
     amount = re.findall(ola_amount_regex, text)[0]
@@ -31,6 +35,7 @@ def get_ola_details(text, file_name):
         'date': date,
         'start_time': start_time,
         'end_time': end_time,
+        'trip_time': trip_timediff,
         'amount': amount,
         'file_name': file_name
     }
@@ -48,9 +53,13 @@ def get_uber_details(text, file_name):
 
     # Extract time details
     _time = re.findall(uber_time_regex, text)
-    start_time, end_time = _time[0], _time[1]
+    start_time, end_time = _time[1], _time[2]
     start_time = start_time[0] + ":" + start_time[1] + " " + start_time[2]
     end_time = end_time[0] + ":" + end_time[1] + " " + end_time[2]
+    start_time_formatted = parser.parse(start_time)
+    end_time_formatted = parser.parse(end_time)
+    # Calculate trip time
+    trip_timediff = str(end_time_formatted - start_time_formatted)
 
     # Extract amount details
     amount = re.findall(uber_amount_regex, text)[0]
@@ -61,6 +70,7 @@ def get_uber_details(text, file_name):
         'date': date,
         'start_time': start_time,
         'end_time': end_time,
+        'trip_time': trip_timediff,
         'amount': amount,
         'file_name': file_name
     }
