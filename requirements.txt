@@ -1,3 +1,4 @@
-ppymupdf
+pymupdf
 pdfplumber
 pdfkit
+pandas
