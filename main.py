@@ -6,6 +6,16 @@ import os
 import pandas as pd
 
 
+def get_nth_longest(lst, n, longer_than=10):
+    _lt = 1
+    for i in lst:
+        if len(i) > longer_than:
+            if _lt == n:
+                return i
+            _lt += 1
+    return "NA"
+
+
 def get_ola_details(text, file_name):
     ola_date_regex = r'([0-2][0-9]|(3)[0-1]) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec), (\d{4})'
     ola_time_regex = r'([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm])'
@@ -30,19 +40,36 @@ def get_ola_details(text, file_name):
     amount = re.findall(ola_amount_regex, text)[0]
     amount = amount.replace('₹', '')
     amount = int(amount)
+
+    # Get start location details
+    start_location_regex = r'([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm])(.|\n)*([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm]) '
+    _temp_start = re.search(start_location_regex, text).group(0)
+    start_location = re.sub(
+        ola_time_regex, '', _temp_start).strip().replace('\n', '')
+
+    # Get end location details
+    end_location_regex = r'([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm])(.|\n)*Payment\n'
+    _temp_end = re.search(end_location_regex, text).group(0)
+    splits = re.split(ola_time_regex, _temp_end, maxsplit=2)
+    end_location = get_nth_longest(splits, 2, 10).strip().replace('\n', ', ')
+    end_location = re.sub(ola_time_regex, '',
+                          end_location).strip().replace('\n', ', ').replace('Payment', '').strip('|, ')
+
     return {
         'provider': 'ola',
         'date': date,
         'start_time': start_time,
         'end_time': end_time,
         'trip_time': trip_timediff,
+        'start_location': start_location,
+        'end_location': end_location,
         'amount': amount,
         'file_name': file_name
     }
 
 
 def get_uber_details(text, file_name):
-    uber_date_regex = r'(January|February|March|April|May|June|July|August|September|October|November|December) ([0-2][0-9]|(3)[0-1]), (\d{4})'
+    uber_date_regex = r'(January|February|March|April|May|June|July|August|September|October|November|December) ([0-2]?[0-9]|(3)[0-1]), (\d{4})'
     uber_time_regex = r'([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm])'
     uber_amount_regex = r'₹\d+'
 
@@ -65,12 +92,28 @@ def get_uber_details(text, file_name):
     amount = re.findall(uber_amount_regex, text)[0]
     amount = amount.replace('₹', '')
     amount = int(amount)
+
+    # Get start location details
+    start_location_regex = r'([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm]) \|(.|\n)*([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm])'
+    _temp_start = re.search(start_location_regex, text).group(0)
+    start_location = re.sub(
+        uber_time_regex, '', _temp_start).strip().replace('\n', '').strip('| ')
+
+    # Get end location details
+    end_location_regex = r'([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])\s*([AaPp][Mm]) \|(.|\n)*Fares are incl'
+    _temp_end = re.search(end_location_regex, text).group(0)
+    splits = re.split(uber_time_regex, _temp_end, maxsplit=2)
+    end_location = get_nth_longest(splits, 2, 10).strip().replace(
+        '\n', ', ').replace('Fares are incl', '').strip('|, ').replace(',,', ',')
+
     return {
         'provider': 'uber',
         'date': date,
         'start_time': start_time,
         'end_time': end_time,
         'trip_time': trip_timediff,
+        'start_location': start_location,
+        'end_location': end_location,
         'amount': amount,
         'file_name': file_name
     }
@@ -91,6 +134,7 @@ if __name__ == '__main__':
     files = os.listdir('bills')
     lis = []
     for file in files:
+        print("Analysing:", file)
         details = get_details('bills/' + file, file)
         lis.append(details)
     # Sort lis with date key
@@ -124,5 +168,6 @@ if __name__ == '__main__':
     # convert df to pdf
     import pandas as pd
     df.to_html('consolidated_report.html', classes='table table-stripped')
+    from weasyprint import HTML
+    HTML('consolidated_report.html').write_pdf('consolidated_report.pdf')
     df.to_markdown('consolidated_report.md')
-    pdf_name = 'consolidated_report.pdf'
