@@ -2,4 +2,4 @@ pymupdf
 pdfplumber
 pdfkit
 pandas
-weasyprint
+md2pdf

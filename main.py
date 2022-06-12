@@ -168,6 +168,7 @@ if __name__ == '__main__':
     # convert df to pdf
     import pandas as pd
     df.to_html('consolidated_report.html', classes='table table-stripped')
-    from weasyprint import HTML
-    HTML('consolidated_report.html').write_pdf('consolidated_report.pdf')
     df.to_markdown('consolidated_report.md')
+    from md2pdf.core import md2pdf
+    md2pdf('consolidated_report.pdf',
+           md_file_path='consolidated_report.md')
